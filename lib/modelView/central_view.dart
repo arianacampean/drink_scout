@@ -5,16 +5,15 @@ import 'package:drink_scout/database/data.dart';
 import 'package:drink_scout/model/drinks.dart';
 import 'package:drink_scout/model/recipes.dart';
 import 'package:drink_scout/modelView/categories_view.dart';
+import 'package:drink_scout/repository/repo.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
-// Define a custom Form widget.
 class CentralForm extends StatefulWidget {
   String namee;
-  Drinks dr;
-  List<Recipes> res;
-  CentralForm(
-      {Key? key, required this.namee, required this.dr, required this.res})
+  Repo repo;
+
+  CentralForm({Key? key, required this.namee, required this.repo})
       : super(key: key);
 
   @override
@@ -25,9 +24,10 @@ class CentralForm extends StatefulWidget {
 
 class CentraloFormState extends State<CentralForm> {
   var name;
+  late List<Recipes> res;
   // String nume = widget.dr.nume;
   var btnTextt = "Modifica";
-  late Drinks old_drink;
+  late Drinks dr;
   bool redonl = true;
   bool isLoading = false;
   var numess;
@@ -43,14 +43,17 @@ class CentraloFormState extends State<CentralForm> {
   @override
   void initState() {
     super.initState();
-    numess = TextEditingController(text: widget.dr.nume);
-    ing = TextEditingController(text: widget.res[0].ingredient);
-    cant = TextEditingController(text: widget.res[0].cantitate.toString());
-    unit = TextEditingController(text: widget.res[0].unitateDeMasura);
-    ing2 = TextEditingController(text: widget.res[1].ingredient);
-    cant2 = TextEditingController(text: widget.res[1].cantitate.toString());
-    unit2 = TextEditingController(text: widget.res[1].unitateDeMasura);
-    mod = TextEditingController(text: widget.dr.modPreparare);
+    dr = widget.repo.getDrinkByName(widget.namee);
+    log(dr.id.toString());
+    res = widget.repo.getRecipesforDrinks(dr.id!);
+    numess = TextEditingController(text: dr.nume);
+    ing = TextEditingController(text: res[0].ingredient);
+    cant = TextEditingController(text: res[0].cantitate.toString());
+    unit = TextEditingController(text: res[0].unitateDeMasura);
+    ing2 = TextEditingController(text: res[1].ingredient);
+    cant2 = TextEditingController(text: res[1].cantitate.toString());
+    unit2 = TextEditingController(text: res[1].unitateDeMasura);
+    mod = TextEditingController(text: dr.modPreparare);
   }
 
   final _formKey = GlobalKey<FormState>();
@@ -111,13 +114,14 @@ class CentraloFormState extends State<CentralForm> {
           // style: TextStyle(color: Colors.red),
           onChanged: (text) {
             setState(() {
-              widget.dr.nume = text;
+              // widget.dr.nume = text;
+              dr.nume = text;
             });
           },
           controller: numess,
           decoration: InputDecoration(
             prefixIcon: Icon(Icons.coffee_maker_outlined),
-            hintText: widget.dr.nume,
+            // hintText: widget.dr.nume,
             enabledBorder: UnderlineInputBorder(
               borderSide: BorderSide(color: c),
             ),
@@ -146,7 +150,8 @@ class CentraloFormState extends State<CentralForm> {
             controller: ing,
             onChanged: (text) {
               setState(() {
-                widget.res[0].ingredient = text;
+                //widget.res[0].ingredient = text;
+                res[0].ingredient = text;
               });
             },
             decoration: InputDecoration(
@@ -173,7 +178,8 @@ class CentraloFormState extends State<CentralForm> {
             controller: cant,
             onChanged: (text) {
               setState(() {
-                widget.res[0].cantitate = int.parse(text);
+                //widget.res[0].cantitate = int.parse(text);
+                res[0].cantitate = int.parse(text);
               });
             },
             // keyboardType: TextInputType.number,
@@ -200,7 +206,8 @@ class CentraloFormState extends State<CentralForm> {
             readOnly: redonl,
             onChanged: (text) {
               setState(() {
-                widget.res[0].unitateDeMasura = text;
+                //widget.res[0].unitateDeMasura = text;
+                res[0].unitateDeMasura = text;
               });
             },
             decoration: InputDecoration(
@@ -239,7 +246,8 @@ class CentraloFormState extends State<CentralForm> {
             controller: ing2,
             onChanged: (text) {
               setState(() {
-                widget.res[1].ingredient = text;
+                // widget.res[1].ingredient = text;
+                res[1].ingredient = text;
               });
             },
             decoration: InputDecoration(
@@ -270,7 +278,8 @@ class CentraloFormState extends State<CentralForm> {
             ),
             onChanged: (text) {
               setState(() {
-                widget.res[1].cantitate = int.parse(text);
+                //widget.res[1].cantitate = int.parse(text);
+                res[1].cantitate = int.parse(text);
               });
             },
             //  keyboardType: TextInputType.number,
@@ -297,7 +306,8 @@ class CentraloFormState extends State<CentralForm> {
             ),
             onChanged: (text) {
               setState(() {
-                widget.res[1].unitateDeMasura = text;
+                // widget.res[1].unitateDeMasura = text;
+                res[1].unitateDeMasura = text;
               });
             },
             textAlign: TextAlign.center,
@@ -324,7 +334,8 @@ class CentraloFormState extends State<CentralForm> {
         readOnly: redonl,
         onChanged: (text) {
           setState(() {
-            widget.dr.modPreparare = text;
+            // widget.dr.modPreparare = text;
+            dr.modPreparare = text;
           });
         },
         //  initialValue: widget.dr.modPreparare,
@@ -367,27 +378,31 @@ class CentraloFormState extends State<CentralForm> {
           child: ElevatedButton(
             onPressed: () async {
               if (btnTextt == "Salveaza") {
-                Drinks dr = Drinks(
-                    id: widget.dr.id,
-                    nume: widget.dr.nume,
-                    modPreparare: widget.dr.modPreparare,
-                    categorie: widget.dr.categorie);
+                Drinks drin = Drinks(
+                    id: dr.id,
+                    nume: dr.nume,
+                    modPreparare: dr.modPreparare,
+                    categorie: dr.categorie);
                 Recipes res1 = Recipes(
-                    id: widget.res[0].id,
-                    idBautura: widget.res[0].idBautura,
-                    ingredient: widget.res[0].ingredient,
-                    cantitate: widget.res[0].cantitate,
-                    unitateDeMasura: widget.res[0].unitateDeMasura);
+                    id: res[0].id,
+                    idBautura: res[0].idBautura,
+                    ingredient: res[0].ingredient,
+                    cantitate: res[0].cantitate,
+                    unitateDeMasura: res[0].unitateDeMasura);
                 log(res1.unitateDeMasura);
                 Recipes res2 = Recipes(
-                    id: widget.res[1].id,
-                    idBautura: widget.res[1].idBautura,
-                    ingredient: widget.res[1].ingredient,
-                    cantitate: widget.res[1].cantitate,
-                    unitateDeMasura: widget.res[1].unitateDeMasura);
-                await DBProvider.db.updateDrinks(dr);
-                await DBProvider.db.updateRecipes(res1);
-                await DBProvider.db.updateRecipes(res2);
+                    id: res[1].id,
+                    idBautura: res[1].idBautura,
+                    ingredient: res[1].ingredient,
+                    cantitate: res[1].cantitate,
+                    unitateDeMasura: res[1].unitateDeMasura);
+                bool good = true;
+                try {
+                  await DBProvider.db.updateAll(drin, res1, res2);
+                } catch (e) {
+                  good = false;
+                }
+                if (good == true) widget.repo.updateAll(drin, res1, res2);
                 final snackBar = SnackBar(
                   content: Builder(builder: (context) {
                     return const Text('Modificarea a fost facuta');
@@ -432,21 +447,21 @@ class CentraloFormState extends State<CentralForm> {
       child: Text("Da"),
       onPressed: () async {
         Navigator.of(context, rootNavigator: true).pop();
-        await DBProvider.db.deleteDrink(widget.dr.id!);
-        await DBProvider.db.deleteRecipes(widget.res[0].id!);
-        await DBProvider.db.deleteRecipes(widget.res[1].id!);
-        Navigator.pop(context);
-        Navigator.pop(context, widget.dr);
+        bool good = true;
+        try {
+          await DBProvider.db.deleteAll(dr.id!, res[0].id!, res[1].id!);
+        } catch (e) {
+          good = false;
+        }
+        if (good == true) widget.repo.deleteAll(dr, res[0], res[1]);
+
+        String s = dr.nume + "+" + "s";
+
+        Navigator.pop(context, s);
         final snackBar = SnackBar(
           content: Builder(builder: (context) {
             return const Text('Bautura a fost stearsa');
           }),
-          // action: SnackBarAction(
-          //   label: 'Undo',
-          //  onPressed: () {
-          // Some code to undo the change.
-          //   },
-          // ),
         );
         ScaffoldMessenger.of(context).showSnackBar(snackBar);
       },

@@ -4,6 +4,7 @@ import 'package:drink_scout/database/data.dart';
 import 'package:drink_scout/model/drinks.dart';
 import 'package:drink_scout/modelView/add_view.dart';
 import 'package:drink_scout/modelView/drinks_view.dart';
+import 'package:drink_scout/repository/repo.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
@@ -15,26 +16,37 @@ class Categories extends StatefulWidget {
 
 class _CategoriesView extends State<Categories> {
   var items = [];
+  late Repo repo;
   late Map<String, int> items_map;
   bool isLoading = false;
   @override
   void initState() {
     super.initState();
+    repo = Repo.repo;
     getItems().whenComplete(() {
-      setState(() {});
+      setState(() {
+        // isLoading = false;
+        // var items2 = repo.getCategories();
+        // items = items2;
+      });
     });
   }
 
   Future getItems() async {
     setState(() => isLoading = true);
-    var items2 = await DBProvider.db.getCategories();
-    var items2_map = await DBProvider.db.getCategoriesMap();
+    log("sper ca nu te repeti");
+    var items2 = await DBProvider.db
+        .getCategories()
+        .then((value) => repo.addCategories(value));
+    var drinks =
+        await DBProvider.db.getDrinks().then((value) => repo.addDrinks(value));
+    repo.getDrinksByCategory();
+
+    await DBProvider.db.getRecipes().then((value) => repo.addRecipes(value));
 
     setState(() {
       isLoading = false;
       items = items2;
-      items_map = items2_map;
-      items_map.forEach((key, value) => {log(key + value.toString())});
     });
   }
 
@@ -53,26 +65,11 @@ class _CategoriesView extends State<Categories> {
             leading: Image.asset('assets/images/images.png'),
             title: Text(items[index]),
             onTap: () async {
-              Drinks dr = await Navigator.push(
+              await Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => ChosenCategory(cat: items[index])));
-              setState(() {
-                // log(dr.categorie);
-                // items_map
-                //     .forEach((key, value) => {log(key + value.toString())});
-                int nr = items_map[dr.categorie]!;
-
-                log("aici este nr" + nr.toString());
-                if (nr == 1) {
-                  log("sterge");
-                  items.remove(dr.categorie);
-                } else {
-                  log("scade");
-                  nr = nr - 1;
-                  items_map[dr.categorie] = nr;
-                }
-              });
+                      builder: (context) =>
+                          ChosenCategory(cat: items[index], repo: repo)));
             },
             dense: false,
             // selected: true,
@@ -86,18 +83,14 @@ class _CategoriesView extends State<Categories> {
       floatingActionButton: FloatingActionButton(
           child: Icon(Icons.add),
           onPressed: () async {
-            Drinks dr = await Navigator.push(
-                context, MaterialPageRoute(builder: (context) => AddForm()));
+            Drinks dr = await Navigator.push(context,
+                MaterialPageRoute(builder: (context) => AddForm(repo: repo)));
 
             setState(() {
-              if (!(items.contains(dr.categorie))) {
-                items.add(dr.categorie);
-                items_map[dr.categorie] = 1;
-              } else {
-                int nr = items_map[dr.categorie]!;
-                nr = nr + 1;
-                items_map[dr.categorie] = nr;
-              }
+              log(dr.categorie);
+              items.forEach((element) {
+                log(element);
+              });
             });
           }),
     );

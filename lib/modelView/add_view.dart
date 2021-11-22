@@ -4,12 +4,14 @@ import 'package:drink_scout/database/data.dart';
 import 'package:drink_scout/model/drinks.dart';
 import 'package:drink_scout/model/recipes.dart';
 import 'package:drink_scout/modelView/categories_view.dart';
+import 'package:drink_scout/repository/repo.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 // Define a custom Form widget.
 class AddForm extends StatefulWidget {
-  const AddForm({Key? key}) : super(key: key);
+  Repo repo;
+  AddForm({Key? key, required this.repo}) : super(key: key);
 
   @override
   AddFormState createState() {
@@ -285,7 +287,13 @@ class AddFormState extends State<AddForm> {
           if (_formKey.currentState!.validate()) {
             Drinks drink = Drinks(
                 nume: name.text, modPreparare: mod.text, categorie: cat.text);
-            Drinks dr = await DBProvider.db.addDrinks(drink);
+            bool good = true;
+            late Drinks dr;
+            try {
+              dr = await DBProvider.db.addDrinks(drink);
+            } catch (e) {
+              good = false;
+            }
             int id = dr.id!;
             Recipes res = Recipes(
                 idBautura: id,
@@ -297,8 +305,14 @@ class AddFormState extends State<AddForm> {
                 ingredient: ing2.text,
                 cantitate: int.parse(cant2.text),
                 unitateDeMasura: unit2.text);
-            await DBProvider.db.addRecipes(res);
-            await DBProvider.db.addRecipes(res2);
+            try {
+              await DBProvider.db.addAllRes(res, res2);
+            } catch (e) {
+              good = false;
+            }
+            if (good == true) widget.repo.addNewRecipes(dr, res, res2);
+            //await DBProvider.db.addRecipes(res);
+            //await DBProvider.db.addRecipes(res2);
 
             Navigator.pop(context, dr);
             final snackBar = SnackBar(

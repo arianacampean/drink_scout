@@ -54,8 +54,8 @@ void main() async {
         element.unitateDeMasura;
     log(s);
   });
-  var items2_map = await DBProvider.db.getCategoriesMap();
-  items2_map.forEach((key, value) => {log(key + value.toString())});
+  //var items2_map = await DBProvider.db.getCategoriesMap();
+  //items2_map.forEach((key, value) => {log(key + value.toString())});
   runApp(const MyApp());
 }
 

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:developer';
 import 'package:drink_scout/model/User.dart';
 import 'package:drink_scout/model/drinks.dart';
 import 'package:drink_scout/model/recipes.dart';
@@ -62,15 +63,25 @@ class DBProvider {
   }
 
   Future<Drinks> addDrinks(Drinks drinks) async {
-    final data = await db.database;
-    final id = await data.insert(DrinksTable, drinks.toMap());
-    return drinks.copy(id: id);
+    try {
+      final data = await db.database;
+      final id = await data.insert(DrinksTable, drinks.toMap());
+      return drinks.copy(id: id);
+    } on DatabaseException catch (_) {
+      log("Exceptie");
+      rethrow;
+    }
   }
 
   Future<int> addRecipes(Recipes recipes) async {
     final data = await db.database;
     final id = await data.insert(RecipesTable, recipes.toMap());
     return id;
+  }
+
+  Future<void> addAllRes(Recipes res1, Recipes res2) async {
+    addRecipes(res1);
+    addRecipes(res2);
   }
 
   Future<List<Drinks>> getDrinks() async {
@@ -98,32 +109,32 @@ class DBProvider {
     return cat;
   }
 
-  Future<Map<String, int>> getCategoriesMap() async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(DrinksTable);
-    Map<String, int> cat_map = {};
-    int index = 1;
-    List.generate(maps.length, (i) {
-      if (cat_map.containsKey(maps[i]["categorie"])) {
-        int nr = cat_map[maps[i]["categorie"]]!;
-        nr = nr + 1;
-        cat_map[maps[i]["categorie"]] = nr;
-      } else {
-        cat_map[maps[i]["categorie"]] = index;
-      }
-    });
-    return cat_map;
-  }
+  // Future<Map<String, int>> getCategoriesMap() async {
+  //   final db = await database;
+  //   final List<Map<String, dynamic>> maps = await db.query(DrinksTable);
+  //   Map<String, int> cat_map = {};
+  //   int index = 1;
+  //   List.generate(maps.length, (i) {
+  //     if (cat_map.containsKey(maps[i]["categorie"])) {
+  //       int nr = cat_map[maps[i]["categorie"]]!;
+  //       nr = nr + 1;
+  //       cat_map[maps[i]["categorie"]] = nr;
+  //     } else {
+  //       cat_map[maps[i]["categorie"]] = index;
+  //     }
+  //   });
+  //   return cat_map;
+  // }
 
-  Future<List> getDrinkByCategory(String cat) async {
-    final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(DrinksTable);
-    var dr = [];
-    List.generate(maps.length, (i) {
-      if (maps[i]['categorie'] == cat) dr.add(maps[i]['nume']);
-    });
-    return dr;
-  }
+  // Future<List> getDrinkByCategory(String cat) async {
+  //   final db = await database;
+  //   final List<Map<String, dynamic>> maps = await db.query(DrinksTable);
+  //   var dr = [];
+  //   List.generate(maps.length, (i) {
+  //     if (maps[i]['categorie'] == cat) dr.add(maps[i]['nume']);
+  //   });
+  //   return dr;
+  // }
 
   Future<List<Recipes>> getRecipes() async {
     final db = await database;
@@ -139,33 +150,33 @@ class DBProvider {
     });
   }
 
-  Future<List<Recipes>> getRecipesById(int id) async {
-    final db = await database;
-    final maps = await db.query(
-      RecipesTable,
-      columns: RecipesFileds.values,
-      where: '${RecipesFileds.idBautura}=?',
-      whereArgs: [id],
-    );
+  // Future<List<Recipes>> getRecipesById(int id) async {
+  //   final db = await database;
+  //   final maps = await db.query(
+  //     RecipesTable,
+  //     columns: RecipesFileds.values,
+  //     where: '${RecipesFileds.idBautura}=?',
+  //     whereArgs: [id],
+  //   );
 
-    return List.generate(maps.length, (i) {
-      return Recipes.fromJson(maps[i]);
-    });
+  //   return List.generate(maps.length, (i) {
+  //     return Recipes.fromJson(maps[i]);
+  //   });
 
-    //return null;
-  }
+  //   //return null;
+  // }
 
-  Future<Drinks> getDrinkByName(String nume) async {
-    final db = await database;
-    final maps = await db.query(
-      DrinksTable,
-      columns: DrinksFileds.values,
-      where: '${DrinksFileds.nume}=?',
-      whereArgs: [nume],
-    );
+  // Future<Drinks> getDrinkByName(String nume) async {
+  //   final db = await database;
+  //   final maps = await db.query(
+  //     DrinksTable,
+  //     columns: DrinksFileds.values,
+  //     where: '${DrinksFileds.nume}=?',
+  //     whereArgs: [nume],
+  //   );
 
-    return Drinks.fromJson(maps.first);
-  }
+  //   return Drinks.fromJson(maps.first);
+  // }
 
   Future<void> updateDrinks(Drinks drink) async {
     // Get a reference to the database.
@@ -193,6 +204,17 @@ class DBProvider {
     );
   }
 
+  Future<void> updateAll(Drinks dr, Recipes res, Recipes res2) async {
+    try {
+      updateDrinks(dr);
+      updateRecipes(res);
+      updateRecipes(res2);
+    } on DatabaseException catch (_) {
+      log("Exceptie");
+      rethrow;
+    }
+  }
+
   Future<void> deleteDrink(int id) async {
     // Get a reference to the database.
     final db = await database;
@@ -211,5 +233,16 @@ class DBProvider {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> deleteAll(int dr, int res1, int res2) async {
+    try {
+      deleteDrink(dr);
+      deleteRecipes(res1);
+      deleteRecipes(res2);
+    } on DatabaseException catch (_) {
+      log("Exceptie");
+      rethrow;
+    }
   }
 }
