@@ -63,20 +63,26 @@ class DBProvider {
   }
 
   Future<Drinks> addDrinks(Drinks drinks) async {
+    // try {
+    //   final data = await db.database;
+    //   final id = await data.insert(DrinksTable, drinks.toMap());
+    //   return drinks.copy(id: id);
+    // } on DatabaseException catch (_) {
+    //   log("Exceptie");
+    //   rethrow;
+    // }
+    return drinks;
+  }
+
+  Future<int> addRecipes(Recipes recipes) async {
     try {
       final data = await db.database;
-      final id = await data.insert(DrinksTable, drinks.toMap());
-      return drinks.copy(id: id);
+      // final id = await data.insert(RecipesTable, recipes.toMap());
+      return 2;
     } on DatabaseException catch (_) {
       log("Exceptie");
       rethrow;
     }
-  }
-
-  Future<int> addRecipes(Recipes recipes) async {
-    final data = await db.database;
-    final id = await data.insert(RecipesTable, recipes.toMap());
-    return id;
   }
 
   Future<void> addAllRes(Recipes res1, Recipes res2) async {
@@ -150,58 +156,58 @@ class DBProvider {
     });
   }
 
-  // Future<List<Recipes>> getRecipesById(int id) async {
-  //   final db = await database;
-  //   final maps = await db.query(
-  //     RecipesTable,
-  //     columns: RecipesFileds.values,
-  //     where: '${RecipesFileds.idBautura}=?',
-  //     whereArgs: [id],
-  //   );
+  Future<List<Recipes>> getRecipesById(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      RecipesTable,
+      columns: RecipesFileds.values,
+      where: '${RecipesFileds.idBautura}=?',
+      whereArgs: [id],
+    );
 
-  //   return List.generate(maps.length, (i) {
-  //     return Recipes.fromJson(maps[i]);
-  //   });
+    return List.generate(maps.length, (i) {
+      return Recipes.fromJson(maps[i]);
+    });
 
-  //   //return null;
-  // }
+    //return null;
+  }
 
   // Future<Drinks> getDrinkByName(String nume) async {
-  //   final db = await database;
-  //   final maps = await db.query(
-  //     DrinksTable,
-  //     columns: DrinksFileds.values,
-  //     where: '${DrinksFileds.nume}=?',
-  //     whereArgs: [nume],
-  //   );
+  //   // final db = await database;
+  //   // final maps = await db.query(
+  //   //   DrinksTable,
+  //   //   columns: DrinksFileds.values,
+  //   //   where: '${DrinksFileds.nume}=?',
+  //   //   whereArgs: [nume],
+  //   // );
 
-  //   return Drinks.fromJson(maps.first);
+  //   // return Drinks.fromJson(maps.first);
   // }
 
   Future<void> updateDrinks(Drinks drink) async {
     // Get a reference to the database.
-    final db = await database;
-    // Update the given Dog.
-    await db.update(
-      DrinksTable,
-      drink.toMap(),
-      // Ensure that the Dog has a matching id.
-      where: 'id = ?',
-      // Pass the Dog's id as a whereArg to prevent SQL injection.
-      whereArgs: [drink.id],
-    );
+    // final db = await database;
+    // // Update the given Dog.
+    // await db.update(
+    //   DrinksTable,
+    //   drink.toMap(),
+    //   // Ensure that the Dog has a matching id.
+    //   where: 'id = ?',
+    //   // Pass the Dog's id as a whereArg to prevent SQL injection.
+    //   whereArgs: [drink.id],
+    // );
   }
 
   Future<void> updateRecipes(Recipes res) async {
     // Get a reference to the database.
     final db = await database;
     // Update the given Dog.
-    await db.update(
-      RecipesTable,
-      res.toMap(),
-      where: 'id = ?',
-      whereArgs: [res.id],
-    );
+    // await db.update(
+    //   RecipesTable,
+    //   res.toMap(),
+    //   where: 'id = ?',
+    //   whereArgs: [res.id],
+    // );
   }
 
   Future<void> updateAll(Drinks dr, Recipes res, Recipes res2) async {

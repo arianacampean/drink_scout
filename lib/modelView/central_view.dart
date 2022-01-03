@@ -1,19 +1,27 @@
 import 'dart:developer';
 import 'dart:io';
 
+import 'package:dio/dio.dart';
 import 'package:drink_scout/database/data.dart';
 import 'package:drink_scout/model/drinks.dart';
 import 'package:drink_scout/model/recipes.dart';
 import 'package:drink_scout/modelView/categories_view.dart';
+import 'package:drink_scout/repository/app_repo.dart';
 import 'package:drink_scout/repository/repo.dart';
+import 'package:drink_scout/retrofit/api_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class CentralForm extends StatefulWidget {
-  String namee;
+  Drinks dr;
   Repo repo;
+  int first_time;
 
-  CentralForm({Key? key, required this.namee, required this.repo})
+  CentralForm(
+      {Key? key,
+      required this.dr,
+      required this.repo,
+      required this.first_time})
       : super(key: key);
 
   @override
@@ -27,51 +35,49 @@ class CentraloFormState extends State<CentralForm> {
   late List<Recipes> res;
   // String nume = widget.dr.nume;
   var btnTextt = "Modifica";
-  late Drinks dr;
+  //late Drinks dr;
   bool redonl = true;
   bool isLoading = false;
   var numess;
+  late AppRepository appRepository;
   //var cat;
-  var ing;
-  var unit;
+  // var ing;
+  // var unit;
   var mod;
-  var cant;
-  var cant2;
-  var ing2;
-  var unit2;
+  // var cant;
+  // var cant2;
+  // var ing2;
+  // var unit2;
+  var ing = TextEditingController();
+  var cant = TextEditingController();
+  var unit = TextEditingController();
+  var ing2 = TextEditingController();
+  var cant2 = TextEditingController();
+  var unit2 = TextEditingController();
   Color c = Colors.grey;
   @override
   void initState() {
     super.initState();
-    dr = widget.repo.getDrinkByName(widget.namee);
-    log(dr.id.toString());
-    res = widget.repo.getRecipesforDrinks(dr.id!);
-    numess = TextEditingController(text: dr.nume);
-    ing = TextEditingController(text: res[0].ingredient);
-    cant = TextEditingController(text: res[0].cantitate.toString());
-    unit = TextEditingController(text: res[0].unitateDeMasura);
-    ing2 = TextEditingController(text: res[1].ingredient);
-    cant2 = TextEditingController(text: res[1].cantitate.toString());
-    unit2 = TextEditingController(text: res[1].unitateDeMasura);
-    mod = TextEditingController(text: dr.modPreparare);
+    appRepository = AppRepository(widget.repo);
+
+    numess = TextEditingController(text: widget.dr.nume);
+    mod = TextEditingController(text: widget.dr.modPreparare);
   }
 
   final _formKey = GlobalKey<FormState>();
-  //var numess = TextEditingController(text: "ana");
 
   @override
   Widget build(BuildContext context) {
     const title = "Recipes";
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(title),
-      ),
-      body: home(),
-    );
+        appBar: AppBar(
+          title: const Text(title),
+        ),
+        body: _buildBody(context));
     // Build a Form widget using the _formKey created above.
   }
 
-  home() {
+  home(BuildContext context) {
     return Form(
       key: _formKey,
       child: SingleChildScrollView(
@@ -96,6 +102,7 @@ class CentraloFormState extends State<CentralForm> {
             height: 50.0,
           ),
           _buildBtn(),
+
           //  _buildBtn2()
         ]),
       ),
@@ -115,7 +122,7 @@ class CentraloFormState extends State<CentralForm> {
           onChanged: (text) {
             setState(() {
               // widget.dr.nume = text;
-              dr.nume = text;
+              widget.dr.nume = text;
             });
           },
           controller: numess,
@@ -129,6 +136,59 @@ class CentraloFormState extends State<CentralForm> {
         ),
       ),
     );
+  }
+
+  FutureBuilder<List<Recipes>> _buildBody(BuildContext context) {
+    List<Recipes> ls = widget.repo.getRecipesforDrinks(widget.dr.id!);
+    if (ls.length == 0) {
+      final client =
+          ApiClient(Dio(BaseOptions(contentType: "application/json")));
+      setState(() {
+        widget.first_time = 1;
+      });
+      return FutureBuilder<List<Recipes>>(
+        future: client.getRecipesById(widget.dr.id!),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.done) {
+            log('iau acum datele pentru central');
+            res = snapshot.data!;
+
+            ing.text = res[0].ingredient;
+            cant.text = res[0].cantitate.toString();
+            unit.text = res[0].unitateDeMasura;
+            ing2.text = res[1].ingredient;
+            cant2.text = res[1].cantitate.toString();
+            unit2.text = res[1].unitateDeMasura;
+            widget.repo.addRecipes(res);
+            return home(context);
+          } else {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+        },
+      );
+    } else {
+      res = ls;
+      if (widget.first_time == 0) {
+        setState(() {
+          widget.first_time = 1;
+        });
+        ing.text = res[0].ingredient;
+        cant.text = res[0].cantitate.toString();
+        unit.text = res[0].unitateDeMasura;
+        ing2.text = res[1].ingredient;
+        cant2.text = res[1].cantitate.toString();
+        unit2.text = res[1].unitateDeMasura;
+      }
+
+      return FutureBuilder(
+        future: null,
+        builder: (context, snapshot) {
+          return home(context);
+        },
+      );
+    }
   }
 
   Widget _buildRow() {
@@ -335,7 +395,7 @@ class CentraloFormState extends State<CentralForm> {
         onChanged: (text) {
           setState(() {
             // widget.dr.modPreparare = text;
-            dr.modPreparare = text;
+            widget.dr.modPreparare = text;
           });
         },
         //  initialValue: widget.dr.modPreparare,
@@ -379,43 +439,49 @@ class CentraloFormState extends State<CentralForm> {
             onPressed: () async {
               if (btnTextt == "Salveaza") {
                 Drinks drin = Drinks(
-                    id: dr.id,
-                    nume: dr.nume,
-                    modPreparare: dr.modPreparare,
-                    categorie: dr.categorie);
+                    id: widget.dr.id,
+                    nume: widget.dr.nume,
+                    modPreparare: widget.dr.modPreparare,
+                    categorie: widget.dr.categorie);
                 Recipes res1 = Recipes(
                     id: res[0].id,
                     idBautura: res[0].idBautura,
                     ingredient: res[0].ingredient,
                     cantitate: res[0].cantitate,
                     unitateDeMasura: res[0].unitateDeMasura);
-                log(res1.unitateDeMasura);
+
                 Recipes res2 = Recipes(
                     id: res[1].id,
                     idBautura: res[1].idBautura,
                     ingredient: res[1].ingredient,
                     cantitate: res[1].cantitate,
                     unitateDeMasura: res[1].unitateDeMasura);
+
                 bool good = true;
+                // showAlertDialog(context);
                 try {
-                  await DBProvider.db.updateAll(drin, res1, res2);
+                  appRepository.updateAll(drin, res1, res2);
                 } catch (e) {
                   good = false;
                 }
-                if (good == true) widget.repo.updateAll(drin, res1, res2);
-                final snackBar = SnackBar(
-                  content: Builder(builder: (context) {
-                    return const Text('Modificarea a fost facuta');
-                  }),
-                );
-                ScaffoldMessenger.of(context).showSnackBar(snackBar);
-                setState(() {
-                  redonl = true;
-                  btnTextt = "Modifica";
-                  c = Colors.grey;
-                });
-                String s = dr.nume + "+" + "m";
-                Navigator.pop(context, s);
+                if (good == false) {
+                  showAlertDialogExceptions(
+                      context, 'Eroare', 'Eroare la modificare');
+                } else {
+                  final snackBar = SnackBar(
+                    content: Builder(builder: (context) {
+                      return const Text('Modificarea a fost facuta');
+                    }),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(snackBar);
+                  setState(() {
+                    redonl = true;
+                    btnTextt = "Modifica";
+                    c = Colors.grey;
+                  });
+                  //String s = widget.dr.nume + "+" + "m";
+                  Navigator.pop(context, drin);
+                }
               } else {
                 setState(() {
                   redonl = false;
@@ -447,23 +513,29 @@ class CentraloFormState extends State<CentralForm> {
       child: Text("Da"),
       onPressed: () async {
         Navigator.of(context, rootNavigator: true).pop();
+
         bool good = true;
         try {
-          await DBProvider.db.deleteAll(dr.id!, res[0].id!, res[1].id!);
+          appRepository.deleteAll(widget.dr, res[0], res[1]);
         } catch (e) {
           good = false;
         }
-        if (good == true) widget.repo.deleteAll(dr, res[0], res[1]);
+        if (good == false) {
+          showAlertDialogExceptions(context, 'Eroare', 'Eroare la stergere');
+        } else {
+          Drinks drink = Drinks(
+              nume: 'Sterge',
+              modPreparare: 'modPreparare',
+              categorie: 'categorie');
 
-        String s = dr.nume + "+" + "s";
-
-        Navigator.pop(context, s);
-        final snackBar = SnackBar(
-          content: Builder(builder: (context) {
-            return const Text('Bautura a fost stearsa');
-          }),
-        );
-        ScaffoldMessenger.of(context).showSnackBar(snackBar);
+          Navigator.pop(context, drink);
+          final snackBar = SnackBar(
+            content: Builder(builder: (context) {
+              return const Text('Bautura a fost stearsa');
+            }),
+          );
+          ScaffoldMessenger.of(context).showSnackBar(snackBar);
+        }
       },
     );
 
@@ -474,6 +546,33 @@ class CentraloFormState extends State<CentralForm> {
       actions: [
         cancelButton,
         continueButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
+    );
+  }
+
+  showAlertDialogExceptions(BuildContext context, String tittl, String mes) {
+    // set up the buttons
+    Widget cancelButton = TextButton(
+      child: Text("Ok"),
+      onPressed: () {
+        Navigator.of(context, rootNavigator: true).pop();
+        // Navigator.pop(dialog)
+      },
+    );
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text(tittl),
+      content: Text(mes),
+      actions: [
+        cancelButton,
       ],
     );
 

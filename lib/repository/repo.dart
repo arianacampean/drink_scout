@@ -10,7 +10,6 @@ class Repo {
   List<Drinks> drinks = [];
   List<String> categories = [];
   List<Recipes> recipes = [];
-  Map map = Map<String, List<String>>();
 
   Repo() {}
   static final Repo repo = Repo();
@@ -33,6 +32,14 @@ class Repo {
     return drinks;
   }
 
+  void addDrink(Drinks dr) {
+    bool bun = false;
+    drinks.forEach((element) {
+      if (element.categorie == dr.categorie) bun = true;
+    });
+    if (bun == true) drinks.add(dr);
+  }
+
   List<Recipes> addRecipes(List<dynamic> res) {
     res.forEach((element) {
       recipes.add(element);
@@ -40,23 +47,13 @@ class Repo {
     return recipes;
   }
 
-  Map getDrinksByCategory() {
+  List<Drinks> getDrinksByCategory(String cat) {
+    List<Drinks> ls = [];
     drinks.forEach((element) {
-      if (map.containsKey(element.categorie)) {
-        List<String> list = map[element.categorie];
-        list.add(element.nume);
-        map[element.categorie] = list;
-      } else {
-        List<String> list2 = [];
-        list2.add(element.nume);
-        map[element.categorie] = list2;
-      }
+      if (element.categorie == cat) ls.add(element);
     });
-    return map;
-  }
 
-  List<String> getListForCategories(String cat) {
-    return map[cat];
+    return ls;
   }
 
   Drinks getDrinkByName(String name) {
@@ -107,7 +104,18 @@ class Repo {
   }
 
   void deleteDrink(Drinks dr) {
-    drinks.remove(dr);
+    int ind = 0;
+    try {
+      drinks.forEach((element) {
+        if (element.id == dr.id) {
+          throw "";
+        }
+        ind++;
+      });
+    } catch (e) {
+      drinks.removeAt(ind);
+      // leave it
+    }
   }
 
   void deleteRes(Recipes res1, Recipes res2) {
@@ -116,26 +124,14 @@ class Repo {
   }
 
   void deleteAll(Drinks dr, Recipes res1, Recipes res2) {
-    // List<String> list = map[dr.categorie];
-    // if (list.length == 1) categories.remove(dr.categorie);
-    // map.remove(dr.categorie);
-
     deleteDrink(dr);
     deleteRes(res1, res2);
   }
 
   void addNewRecipes(Drinks sr, Recipes res, Recipes res2) {
     drinks.add(sr);
-    if (map.containsKey(sr.categorie)) {
-      List<String> list = map[sr.categorie];
-      list.add(sr.nume);
-      map[sr.categorie] = list;
-    } else {
-      List<String> list = [];
-      list.add(sr.nume);
-      map[sr.categorie] = list;
-      categories.add(sr.categorie);
-    }
+    if (!categories.contains(sr.categorie)) categories.add(sr.categorie);
+
     recipes.add(res);
     recipes.add(res2);
   }

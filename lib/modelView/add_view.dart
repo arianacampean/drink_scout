@@ -1,10 +1,13 @@
 import 'dart:developer';
 
+import 'package:dio/dio.dart';
 import 'package:drink_scout/database/data.dart';
 import 'package:drink_scout/model/drinks.dart';
 import 'package:drink_scout/model/recipes.dart';
 import 'package:drink_scout/modelView/categories_view.dart';
+import 'package:drink_scout/repository/app_repo.dart';
 import 'package:drink_scout/repository/repo.dart';
+import 'package:drink_scout/retrofit/api_client.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -22,11 +25,13 @@ class AddForm extends StatefulWidget {
 // Define a corresponding State class.
 // This class holds data related to the form.
 class AddFormState extends State<AddForm> {
-  // Create a global key that uniquely identifies the Form widget
-  // and allows validation of the form.
-  //
-  // Note: This is a GlobalKey<FormState>,
-  // not a GlobalKey<MyCustomFormState>.
+  late AppRepository appRepository;
+  @override
+  void initState() {
+    super.initState();
+    appRepository = AppRepository(widget.repo);
+  }
+
   final _formKey = GlobalKey<FormState>();
   final name = TextEditingController();
   final cat = TextEditingController();
@@ -283,38 +288,28 @@ class AddFormState extends State<AddForm> {
       alignment: Alignment.bottomCenter,
       child: ElevatedButton(
         onPressed: () async {
-          // Validate returns true if the form is valid, or false otherwise.
-          if (_formKey.currentState!.validate()) {
-            Drinks drink = Drinks(
-                nume: name.text, modPreparare: mod.text, categorie: cat.text);
-            bool good = true;
-            late Drinks dr;
-            try {
-              dr = await DBProvider.db.addDrinks(drink);
-            } catch (e) {
-              good = false;
-            }
-            int id = dr.id!;
-            Recipes res = Recipes(
-                idBautura: id,
-                ingredient: ing.text,
-                cantitate: int.parse(cant.text),
-                unitateDeMasura: unit.text);
-            Recipes res2 = Recipes(
-                idBautura: id,
-                ingredient: ing2.text,
-                cantitate: int.parse(cant2.text),
-                unitateDeMasura: unit2.text);
-            try {
-              await DBProvider.db.addAllRes(res, res2);
-            } catch (e) {
-              good = false;
-            }
-            if (good == true) widget.repo.addNewRecipes(dr, res, res2);
-            //await DBProvider.db.addRecipes(res);
-            //await DBProvider.db.addRecipes(res2);
-
-            Navigator.pop(context, dr);
+          Drinks drink = Drinks(
+              nume: name.text, modPreparare: mod.text, categorie: cat.text);
+          Recipes res = Recipes(
+              idBautura: 0,
+              ingredient: ing.text,
+              cantitate: int.parse(cant.text),
+              unitateDeMasura: unit.text);
+          Recipes res2 = Recipes(
+              idBautura: 0,
+              ingredient: ing2.text,
+              cantitate: int.parse(cant2.text),
+              unitateDeMasura: unit2.text);
+          bool good = true;
+          try {
+            appRepository.addDrink2(drink, res, res2);
+          } catch (e) {
+            good = false;
+          }
+          if (good != true) {
+          } else {
+            //TREBUIE SI UN DR LA NAVIGATOR;
+            Navigator.pop(context, drink);
             final snackBar = SnackBar(
               content: Builder(builder: (context) {
                 return const Text('Adaugarea fost facuta');
