@@ -70,12 +70,19 @@ class _CategoriesView extends State<Categories> {
           builder: (context, snapshot) {
             log("sunt in future de la categorii");
             if (snapshot.connectionState == ConnectionState.done) {
-              posts = snapshot.data!;
-              posts.forEach((element) {
-                if (!posts_filter.contains(element.categorie)) {
-                  posts_filter.add(element.categorie);
-                }
-              });
+              try {
+                posts = snapshot.data!;
+                posts.forEach((element) {
+                  if (!posts_filter.contains(element.categorie)) {
+                    posts_filter.add(element.categorie);
+                  }
+                });
+              } catch (_) {
+                
+                showAlertDialogExceptions(
+                    context, 'Eroare', 'Eroare la get categories');
+              }
+
               repo.addCategories(posts_filter);
 
               return _buildListView(context, posts_filter);

@@ -7,6 +7,7 @@ import 'package:drink_scout/model/recipes.dart';
 import 'package:flutter/cupertino.dart';
 
 class Repo {
+  late Drinks dr;
   List<Drinks> drinks = [];
   List<String> categories = [];
   List<Recipes> recipes = [];
